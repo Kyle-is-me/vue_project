@@ -7,7 +7,7 @@
           <el-input v-model="loginForm.username" placeholder="请输入用户名" prefix-icon="myicon-user"></el-input>
         </el-form-item>
         <el-form-item prop="password">
-          <el-input v-model="loginForm.password" placeholder="请输入密码" prefix-icon="myicon-key"></el-input>
+          <el-input type="password" v-model="loginForm.password" placeholder="请输入密码" prefix-icon="myicon-key"></el-input>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click='login' class="login-btn">立即登录</el-button>
@@ -18,6 +18,8 @@
 </template>
 
 <script>
+// 引入登录的接口
+import { login } from '@/api/login_index.js'
 export default {
   data () {
     return {
@@ -27,10 +29,10 @@ export default {
       },
       rules: {
         username: [
-          { required: true, message: '请输入活动名称', trigger: 'blur' }
+          { required: true, message: '请输入用户名', trigger: 'blur' }
         ],
         password: [
-          { required: true, message: '请输入活动名称', trigger: 'blur' }
+          { required: true, message: '请输入用户密码', trigger: 'blur' }
         ]
       }
     }
@@ -40,9 +42,34 @@ export default {
       // 实现二次验证
       this.$refs.loginForm.validate((valid) => {
         if (valid) {
-          alert('sumit')
+        //   alert('sumit')
+          login(this.loginForm)
+            .then((res) => {
+            //   console.log(res)
+              if (res.data.meta.status === 200) {
+                // 存储token到本地存储
+                localStorage.setItem('itcast_manage_35', res.data.data.token)
+                // 跳转路由
+                this.$router.push({ name: 'home' })
+              } else {
+                this.$message({
+                  message: res.data.meta.msg,
+                  type: 'warning'
+                })
+              }
+            })
+            .catch(() => {
+              this.$message({
+                message: '服务器异常，稍后重试',
+                type: 'error'
+              })
+            })
         } else {
-          console.log('error submit!!')
+        //   this.$message({
+        //     message: '请输入所有必填信息',
+        //     type: 'error'
+        //   })
+          this.$message.error('请输入所有必填信息！')
           return false
         }
       })
