@@ -121,6 +121,7 @@ export default {
   height: 100%;
   .el-menu {
     width: auto;
+
   }
   // 如果是展开状态,那么宽度就是200px,如果是合并状态,宽度:auto
   .el-menu:not(.el-menu--collapse) {
@@ -132,6 +133,7 @@ export default {
   }
   .el-aside {
     background-color: #545c64;
+    overflow: hidden;
   }
   .el-header {
     display: flex;

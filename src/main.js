@@ -1,12 +1,10 @@
 import Vue from 'vue'
 import App from './App.vue'
 import router from '@/router/router.js'
-
 import '@/styles/index.less'
 
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
-
 // 添加全局前置守卫
 router.beforeEach((to, from, next) => {
   // to目标路由，里面的一个属性path就是目标路由的path值
