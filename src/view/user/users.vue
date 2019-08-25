@@ -47,7 +47,7 @@
       </div>
     </el-dialog>
     <!-- 表格 -->
-    <el-table :data="userList" border style="width: 100%;margin-top:15px">
+    <el-table :data="userList" ref="userTable" border style="width: 100%;margin-top:15px">
       <el-table-column type="index" width="50"></el-table-column>
       <el-table-column prop="username" label="姓名" width="180"></el-table-column>
       <el-table-column prop="email" label="邮箱" width="180"></el-table-column>
@@ -302,7 +302,7 @@ export default {
     // 展示用户编辑框
     editUserById (row) {
       this.editFormVisible = true
-      console.log(row)
+      // console.log(row)
       this.editForm.username = row.username
       this.editForm.email = row.email
       this.editForm.mobile = row.mobile
@@ -365,6 +365,7 @@ export default {
     },
     // 删除用户
     delUser (id) {
+      console.log(this.$refs.userTable)
       this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -378,6 +379,11 @@ export default {
                   type: 'success',
                   message: '删除成功!'
                 })
+                if (this.userObj.pagesize === 1) {
+                  if (this.userObj.pagenum > 1) {
+                    this.userObj.pagenum--
+                  }
+                }
                 this.init()
               } else {
                 this.$message.error('删除失败')
