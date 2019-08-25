@@ -17,24 +17,33 @@
       >
         <el-button slot="append" icon="el-icon-search" @click="init()"></el-button>
       </el-input>
-      <el-button type="success" round>添加用户</el-button>
+      <el-button type="success" round @click="addFormVisible = true">添加用户</el-button>
     </div>
     <!-- 添加用户 -->
     <el-dialog title="添加用户" :visible.sync="addFormVisible">
       <el-form
-        :model="ruleForm"
-        :rules="rules2"
-        ref="ruleForm"
+        :model="addUserForm"
+        :rules="addRules"
+        ref="addUserForm"
         label-width="100px"
         class="demo-ruleForm"
       >
-        <el-form-item label="活动名称" prop="name">
-          <el-input v-model="ruleForm.name"></el-input>
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="addUserForm.username"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="addUserForm.password"></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="addUserForm.email"></el-input>
+        </el-form-item>
+        <el-form-item label="手机号" prop="mobile">
+          <el-input v-model="addUserForm.mobile"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="addFormVisible = false">取 消</el-button>
-        <el-button type="primary" @click="addFormVisible = false">确 定</el-button>
+        <el-button type="primary" @click="addUser">确 定</el-button>
       </div>
     </el-dialog>
     <!-- 表格 -->
@@ -56,17 +65,17 @@
       <el-table-column label="操作">
         <template slot-scope="scope">
           <el-tooltip class="item" effect="dark" content="编辑" placement="top">
-            <el-button type="primary" icon="el-icon-edit" @click="editUserById(scope.row.id)"></el-button>
+            <el-button type="primary" icon="el-icon-edit" @click="editUserById(scope.row)"></el-button>
           </el-tooltip>
           <el-tooltip class="item" effect="dark" content="分配角色" placement="top">
             <el-button
               type="primary"
               icon="el-icon-caret-bottom"
-              @click="allotRoleById(scope.row.id)"
+              @click="showAllotDialog(scope.row)"
             ></el-button>
           </el-tooltip>
           <el-tooltip class="item" effect="dark" content="删除" placement="top">
-            <el-button type="primary" icon="el-icon-delete"></el-button>
+            <el-button type="primary" icon="el-icon-delete" @click="delUser(scope.row.id)"></el-button>
           </el-tooltip>
         </template>
       </el-table-column>
@@ -86,20 +95,20 @@
     <!-- 编辑用户 -->
     <el-dialog title="编辑用户" :visible.sync="editFormVisible" :close-on-click-modal="false">
       <el-form
-        :model="uesrData"
+        :model="editForm"
         :rules="rules"
-        ref="uesrEdit"
+        ref="editForm"
         label-width="100px"
         class="demo-ruleForm"
       >
         <el-form-item label="姓名">
-          <el-input :disabled="true" v-model="uesrData.username" style="width:100px"></el-input>
+          <el-input :disabled="true" v-model="editForm.username" style="width:100px"></el-input>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
-          <el-input v-model="uesrData.email"></el-input>
+          <el-input v-model="editForm.email"></el-input>
         </el-form-item>
         <el-form-item label="电话" prop="mobile">
-          <el-input v-model="uesrData.mobile"></el-input>
+          <el-input v-model="editForm.mobile"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -109,12 +118,12 @@
     </el-dialog>
     <!-- 分配角色 -->
     <el-dialog title="分配角色" :visible.sync="allotFormVisible" :close-on-click-modal="false">
-      <el-form ref="form" :model="uesrData" label-width="80px">
+      <el-form ref="form" :model="allotForm" label-width="80px">
         <el-form-item label="用户名:">
-          <span>{{uesrData.username}}</span>
+          <span>{{allotForm.username}}</span>
         </el-form-item>
         <el-form-item label="角色:">
-          <el-select v-model="uesrData.rid" placeholder="请选择角色">
+          <el-select v-model="allotForm.rid" placeholder="请选择角色">
             <el-option
               v-for="item in allRoles"
               :key="item.id"
@@ -126,7 +135,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="allotFormVisible = false">取 消</el-button>
-        <el-button type="primary" @click="allotFormVisible = false">确 定</el-button>
+        <el-button type="primary" @click="allotRole">确 定</el-button>
       </div>
     </el-dialog>
   </div>
@@ -135,11 +144,14 @@
 <script>
 import {
   getAllUsers,
-  getUserById,
   editUserById,
-  getAllRoles,
-  changeState
+  changeState,
+  addUser,
+  allotUserRole,
+  delUserById
 } from '@/api/user_index.js'
+
+import { getAllRoles } from '@/api/roles_index.js'
 
 export default {
   data () {
@@ -152,25 +164,70 @@ export default {
         pagesize: 3
       },
       editFormVisible: false,
-      allotFormVisible: false,
-      addFormVisible: false,
-      uesrData: {},
-      // 添加用户
-      ruleForm: {
-        name: ''
+      editForm: {
+        username: '',
+        email: '',
+        id: '',
+        mobile: ''
       },
-      rules2: {
-        name: [
-          { required: true, message: '请输入活动名称', trigger: 'blur' },
-          { min: 3, max: 5, message: '长度在 3 到 5 个字符', trigger: 'blur' }
+      rules: {
+        email: [
+          { required: true, message: '请输入邮箱', trigger: 'blur' }, // 添加正则表达式
+          {
+            pattern: /\w+[@]\w+[.]\w+/,
+            message: '请输入合法的电子邮箱',
+            trigger: 'blur'
+          }
+        ],
+        mobile: [
+          { required: true, message: '请输入手机号', trigger: 'blur' }, // 添加正则表达式
+          {
+            pattern: /^1\d{10}$/,
+            message: '请输入合法的手机号',
+            trigger: 'blur'
+          }
         ]
       },
-      // 所有角色信息
-      allRoles: [],
-      rules: {
-        email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
-        mobile: [{ required: true, message: '请输入手机号', trigger: 'blur' }]
-      }
+      allotFormVisible: false,
+      allotForm: {
+        username: '',
+        id: '',
+        rid: ''
+      },
+      addFormVisible: false,
+      // 添加用户
+      addUserForm: {
+        username: '',
+        password: '',
+        email: '',
+        mobile: ''
+      },
+      addRules: {
+        username: [
+          { required: true, message: '请输入用户名', trigger: 'blur' }
+        ],
+        password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+        email: [
+          { required: true, message: '请正确填写邮箱', trigger: 'blur' },
+          // 添加正则表达式
+          {
+            pattern: /\w+[@]\w+[.]\w+/,
+            message: '请输入合法的电子邮箱',
+            trigger: 'blur'
+          }
+        ],
+        mobile: [
+          { required: true, message: '请输入手机', trigger: 'blur' },
+          // 添加正则表达式
+          {
+            pattern: /^1\d{10}$/,
+            message: '请输入合法的手机号',
+            trigger: 'blur'
+          }
+        ]
+      },
+      // 角色列表
+      allRoles: []
     }
   },
   methods: {
@@ -184,7 +241,7 @@ export default {
       this.userObj.pagenum = val
       this.init()
     },
-    // 获取数据
+    // 获取全部用户数据
     init () {
       getAllUsers(this.userObj)
         .then(res => {
@@ -198,21 +255,6 @@ export default {
         })
         .catch(() => {
           this.$message.error('服务器异常')
-        })
-    },
-    // 根据id获取数据
-    getUserById (userId) {
-      getUserById(userId)
-        .then(res => {
-          if (res.data.meta.status === 200) {
-            this.uesrData = res.data.data
-            // console.log(this.uesrData)
-          } else {
-            this.$message.error(res.data.meta.msg)
-          }
-        })
-        .catch(err => {
-          console.log(err)
         })
     },
     // 修改用户状态
@@ -231,54 +273,143 @@ export default {
           console.log(err)
         })
     },
-    // 用户编辑
-    editUserById (userId) {
+    // 添加用户
+    addUser () {
+      this.addFormVisible = false
+      // 实现二次验证
+      this.$refs.addUserForm.validate(valid => {
+        if (valid) {
+          addUser(this.addUserForm)
+            .then(res => {
+              // console.log(res)
+              if (res.data.meta.status === 201) {
+                this.$message.success('添加用户成功')
+                this.init()
+                this.$refs.addUserForm.resetFields()
+              } else {
+                this.$message.error(res.data.meta.msg)
+              }
+            })
+            .catch(err => {
+              console.log(err)
+            })
+        } else {
+          this.$message.error('请输入所有必填信息！')
+          return false
+        }
+      })
+    },
+    // 展示用户编辑框
+    editUserById (row) {
       this.editFormVisible = true
-      this.getUserById(userId)
+      console.log(row)
+      this.editForm.username = row.username
+      this.editForm.email = row.email
+      this.editForm.mobile = row.mobile
+      this.editForm.id = row.id
     },
     // 提交编辑
     editUser () {
-      this.editFormVisible = false
-      editUserById(this.uesrData.id, {
-        username: this.uesrData.username,
-        email: this.uesrData.email,
-        mobile: this.uesrData.mobile
+      // 二次验证
+      this.$refs.editForm.validate(valid => {
+        if (valid) {
+          editUserById(this.editForm)
+            .then(res => {
+              // console.log(res)
+              if (res.data.meta.status === 200) {
+                this.$message.success(res.data.meta.msg)
+                this.init()
+                this.editFormVisible = false
+              } else {
+                this.$message.error(res.data.meta.msg)
+              }
+            })
+            .catch(err => {
+              console.log(err)
+            })
+        } else {
+          this.$message.error('请填写完整信息')
+          return false
+        }
       })
-        .then(res => {
-          // console.log(res)
-          if (res.data.meta.status === 200) {
-            this.$message.success(res.data.meta.msg)
-            this.init()
-          } else {
-            this.$message.error(res.data.meta.msg)
-          }
-        })
-        .catch(err => {
-          console.log(err)
-        })
+    },
+    // 展示分配角色对话框
+    showAllotDialog (row) {
+      // console.log(row)
+      this.allotFormVisible = true
+      this.allotForm.username = row.username
+      this.allotForm.id = row.id
+      // 修改后台代码，增加rid数据的返回
+      this.allotForm.rid = row.rid
     },
     // 分配角色
-    allotRoleById (userId) {
-      this.allotFormVisible = true
-      this.getUserById(userId)
-
-      // 获取所有角色分类
-      getAllRoles()
-        .then(res => {
-          // console.log(res)
-          if (res.data.meta.status === 200) {
-            this.allRoles = res.data.data
-          } else {
-            this.$message.error(res.data.meta.msg)
-          }
+    allotRole () {
+      // 调用接口方法
+      if (this.allotForm.rid) {
+        allotUserRole(this.allotForm)
+          .then(res => {
+            if (res.data.meta.status === 200) {
+              this.$message.success(res.data.meta.msg)
+              this.init()
+              this.allotFormVisible = false
+            } else {
+              this.$message.error(res.data.meta.msg)
+            }
+          })
+          .catch(err => {
+            console.log(err)
+          })
+      } else {
+        this.$message.warning('请选择角色')
+      }
+    },
+    // 删除用户
+    delUser (id) {
+      this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+        .then(() => {
+          delUserById(id)
+            .then(res => {
+              if (res.data.meta.status === 200) {
+                this.$message({
+                  type: 'success',
+                  message: '删除成功!'
+                })
+                this.init()
+              } else {
+                this.$message.error('删除失败')
+              }
+            })
+            .catch(err => {
+              console.log(err)
+            })
         })
-        .catch(err => {
-          console.log(err)
+        .catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          })
         })
     }
   },
   mounted () {
     this.init()
+    // 获取所有角色分类
+    getAllRoles()
+      .then(res => {
+        // console.log(res)
+        if (res.data.meta.status === 200) {
+          this.allRoles = res.data.data
+        } else {
+          this.$message.error(res.data.meta.msg)
+        }
+      })
+      .catch(err => {
+        console.log(err)
+      })
   }
 }
 </script>
