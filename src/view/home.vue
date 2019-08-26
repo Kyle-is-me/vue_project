@@ -83,7 +83,7 @@
               <i class="el-icon-location"></i>
               <span>数据统计</span>
             </template>
-            <el-menu-item index="5-1">
+            <el-menu-item index="/home/reports">
               <template slot="title">
                 <i class="el-icon-menu"></i>
                 <span>数据报表</span>

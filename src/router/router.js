@@ -8,6 +8,7 @@ import Welcome from '@/view/welcome.vue'
 import Users from '@/view/user/users.vue'
 import Roles from '@/view/authority/roles.vue'
 import Rights from '@/view/authority/rights.vue'
+import Reports from '@/view/reports/reports.vue'
 
 Vue.use(VueRouter)
 
@@ -50,6 +51,11 @@ export default new VueRouter({
           name: 'rights',
           path: 'rights',
           component: Rights
+        },
+        {
+          name: 'reports',
+          path: 'reports',
+          component: Reports
         }
       ]
     }

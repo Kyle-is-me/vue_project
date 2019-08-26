@@ -75,13 +75,14 @@
         :data="rightsList"
         show-checkbox
         node-key="id"
+        ref="tree"
         :default-expand-all="true"
         :default-checked-keys="chkedArr"
         :props="defaultProps"
       ></el-tree>
       <div slot="footer" class="dialog-footer">
         <el-button @click="grantFormVisible = false">取 消</el-button>
-        <el-button type="primary" @click="grantFormVisible = false">确 定</el-button>
+        <el-button type="primary" @click="grantRights">确 定</el-button>
       </div>
     </el-dialog>
     <!-- 添加角色 -->
@@ -107,7 +108,8 @@ import {
   getAllRoles,
   delRightById,
   addRole,
-  delRoleById
+  delRoleById,
+  grantRightsById
 } from '@/api/roles_index.js'
 import { getAllRights } from '@/api/rights_index.js'
 export default {
@@ -118,9 +120,11 @@ export default {
         children: 'children'
       },
       rightsList: [],
-      chkedArr: [105],
+      chkedArr: [],
       rolesList: [],
       grantFormVisible: false,
+      currentUserId: '',
+      // ridList: [],
       addFormVisible: false,
       roleForm: {
         roleName: '',
@@ -164,7 +168,7 @@ export default {
     },
     // 通过id删除角色
     delRole (id) {
-      console.log(id)
+      // console.log(id)
       this.$confirm('此操作将永久删除该角色, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -197,8 +201,64 @@ export default {
     },
     // 展示角色授权对话框
     showGrant (row) {
+      this.currentUserId = row.id
       this.grantFormVisible = true
+      // 获取所有权限
+      this.initial()
       // console.log(row)
+      this.chkedArr.length = 0
+      if (row.children && row.children.length > 0) {
+        row.children.forEach(first => {
+          if (first.children && first.children.length > 0) {
+            first.children.forEach(second => {
+              if (second.children && second.children.length > 0) {
+                second.children.forEach(third => {
+                  // console.log(third.id)
+                  this.chkedArr.push(third.id)
+                })
+              }
+            })
+          }
+        })
+      }
+    },
+    // 角色授权
+    grantRights () {
+      // console.log(this.$refs.tree.getCheckedKeys())
+      // 1.获取节点数据
+      let arr = this.$refs.tree.getCheckedNodes()
+      // console.log(arr)
+      // 2.遍历数组,拼接数据
+      let temp = []
+      arr.forEach(e => {
+        temp.push(e.id + ',' + e.pid)
+      })
+      // console.log(temp) ['131,110,125', '145,0', '146,145', '148,146,145']
+      // 3将获取到的数组数据进行拼接
+      let tempstr = temp.join(',')
+      // console.log(tempstr)  145,0,146,145,148,146,145
+      // 4.将字符串重新转换成数组
+      let temparr = tempstr.split(',')
+      // console.log(temparr) ["145", "0", "146", "145", "148", "146", "145"]
+      // 5.数组去重--es6新语法
+      let finaltemp = [...new Set(temparr)]
+      // console.log(finaltemp) ["145", "0", "146", "148"]
+      // 6.将数组转换成最终我们需要的字符串
+      let rids = finaltemp.join(',')
+      // console.log(rids) 145,0,146,148
+      grantRightsById(this.currentUserId, rids)
+        .then(res => {
+          if (res.data.meta.status === 200) {
+            this.$message.success(res.data.meta.msg)
+            this.init()
+          } else {
+            this.$message.error(res.data.meta.msg)
+          }
+          this.grantFormVisible = false
+        })
+        .catch(err => {
+          console.log(err)
+        })
     },
     // 删除角色指定权限
     delRights (row, userId) {
@@ -230,21 +290,25 @@ export default {
         .catch(err => {
           console.log(err)
         })
+    },
+    // 获取所有权限
+    initial () {
+      getAllRights('tree')
+        .then(res => {
+          // console.log(res)
+          if (res.data.meta.status === 200) {
+            this.rightsList = res.data.data
+          }
+        })
+        .catch(err => {
+          console.log(err)
+        })
     }
   },
   mounted () {
     this.init()
     // 获取所有权限
-    getAllRights('tree')
-      .then(res => {
-        // console.log(res)
-        if (res.data.meta.status === 200) {
-          this.rightsList = res.data.data
-        }
-      })
-      .catch(err => {
-        console.log(err)
-      })
+    this.initial()
   }
 }
 </script>
