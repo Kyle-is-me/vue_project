@@ -9,3 +9,26 @@ export const getAllRoles = () => {
     url: 'roles'
   })
 }
+// 删除角色指定权限
+export const delRightById = (roleId, rightId) => {
+  return axios({
+    url: `roles/${roleId}/rights/${rightId}`,
+    method: 'delete'
+  })
+}
+
+// 添加角色
+export const addRole = (data) => {
+  return axios({
+    method: 'post',
+    url: 'roles',
+    data
+  })
+}
+// 删除角色
+export const delRoleById = (id) => {
+  return axios({
+    url: `roles/${id}`,
+    method: 'delete'
+  })
+}
