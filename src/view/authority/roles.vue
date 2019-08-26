@@ -12,7 +12,17 @@
     <el-table :data="rolesList" border style="width: 100%;margin-top:15px">
       <el-table-column type="expand">
         <template slot-scope="scope">
-          <el-tag v-for="item in rolesList" :key="item.id" closable >{{scope.authName}}</el-tag>
+          <!-- 准备进行嵌套循环生成展开行数据展示结构 -->
+          <el-row v-for="first in scope.row.children" :key="first.id" style="margin:bottom:10px;border-bottom:1px dashed #ccc">
+            <el-col :span="4">
+              <el-tag closable type="success">{{first.authName}}</el-tag>
+            </el-col>
+            <el-col :span="20">
+              <el-row v-for="second in first.children" :key="second.id" style="margin-bottom:10px">
+
+              </el-row>
+            </el-col>
+          </el-row>
         </template>
       </el-table-column>
       <el-table-column type="index" width="50"></el-table-column>
@@ -47,7 +57,7 @@ export default {
   mounted () {
     getAllRoles()
       .then(res => {
-        console.log(res)
+        // console.log(res)
         if (res.data.meta.status === 200) {
           this.rolesList = res.data.data
         } else {

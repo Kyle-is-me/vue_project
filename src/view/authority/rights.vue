@@ -50,6 +50,8 @@ export default {
         return '二级'
       } else if (level === '2') {
         return '三级'
+      } else {
+        return ''
       }
     }
   }
