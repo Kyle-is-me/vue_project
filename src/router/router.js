@@ -8,6 +8,9 @@ import Welcome from '@/view/welcome.vue'
 import Users from '@/view/user/users.vue'
 import Roles from '@/view/authority/roles.vue'
 import Rights from '@/view/authority/rights.vue'
+import Goods from '@/view/goods/goods.vue'
+import List from '@/view/goods/list.vue'
+import Add from '@/view/goods/add.vue'
 import Reports from '@/view/reports/reports.vue'
 
 Vue.use(VueRouter)
@@ -51,6 +54,25 @@ export default new VueRouter({
           name: 'rights',
           path: 'rights',
           component: Rights
+        },
+        {
+          name: 'goods',
+          path: 'goods',
+          component: Goods,
+          // 重定向
+          redirect: { name: 'list' },
+          children: [
+            {
+              name: 'list',
+              path: 'list',
+              component: List
+            },
+            {
+              name: 'add',
+              path: 'add',
+              component: Add
+            }
+          ]
         },
         {
           name: 'reports',

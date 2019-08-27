@@ -22,7 +22,7 @@
               <el-tag
                 closable
                 :type="'success'"
-                @close="delRights(scope.row,first.id)"
+                @close="cnt=0;delRights(scope.row,first.id)"
               >{{first.authName}}</el-tag>
             </el-col>
             <el-col :span="20">
@@ -31,7 +31,7 @@
                   <el-tag
                     closable
                     :type="'info'"
-                    @close="delRights(scope.row,second.id)"
+                    @close="cnt=0;delRights(scope.row,second.id)"
                   >{{second.authName}}</el-tag>
                 </el-col>
                 <el-col :span="20">
@@ -41,7 +41,7 @@
                     :key="third.id"
                     :type="'warning'"
                     style="margin-right:5px;margin-bottom:5px"
-                    @close="delRights(scope.row,third.id)"
+                    @close="cnt=0;delRights(scope.row,third.id)"
                   >{{third.authName}}</el-tag>
                 </el-col>
               </el-row>
@@ -115,6 +115,7 @@ import { getAllRights } from '@/api/rights_index.js'
 export default {
   data () {
     return {
+      cnt: 0,
       defaultProps: {
         label: 'authName',
         children: 'children'
@@ -203,8 +204,10 @@ export default {
     showGrant (row) {
       this.currentUserId = row.id
       this.grantFormVisible = true
-      // 获取所有权限
-      this.initial()
+      // 获取所有权限--更新
+      // this.initial()
+      // 深拷贝也可以实现更新
+      this.rightsList = [...this.rightsList]
       // console.log(row)
       this.chkedArr.length = 0
       if (row.children && row.children.length > 0) {
@@ -223,7 +226,7 @@ export default {
       }
     },
     // 角色授权
-    grantRights () {
+    async grantRights () {
       // console.log(this.$refs.tree.getCheckedKeys())
       // 1.获取节点数据
       let arr = this.$refs.tree.getCheckedNodes()
@@ -246,30 +249,54 @@ export default {
       // 6.将数组转换成最终我们需要的字符串
       let rids = finaltemp.join(',')
       // console.log(rids) 145,0,146,148
-      grantRightsById(this.currentUserId, rids)
-        .then(res => {
-          if (res.data.meta.status === 200) {
-            this.$message.success(res.data.meta.msg)
-            this.init()
-          } else {
-            this.$message.error(res.data.meta.msg)
-          }
-          this.grantFormVisible = false
-        })
-        .catch(err => {
-          console.log(err)
-        })
+      // 用es7新语法做一遍
+      let res = await grantRightsById(this.currentUserId, rids)
+      console.log(res)
+      if (res.data.meta.status === 200) {
+        this.$message.success(res.data.meta.msg)
+        this.init()
+        this.grantFormVisible = false
+      } else {
+        this.$message.error(res.data.meta.msg)
+      }
+      // grantRightsById(this.currentUserId, rids)
+      //   .then(res => {
+      //     if (res.data.meta.status === 200) {
+      //       this.$message.success(res.data.meta.msg)
+      //       this.init()
+      //     } else {
+      //       this.$message.error(res.data.meta.msg)
+      //     }
+      //     this.grantFormVisible = false
+      //   })
+      //   .catch(err => {
+      //     console.log(err)
+      //   })
     },
     // 删除角色指定权限
-    delRights (row, userId) {
-      // console.log(row.id, userId)
-      delRightById(row.id, userId)
+    delRights (row, rid) {
+      delRightById(row.id, rid)
         .then(res => {
-          console.log(res)
+          // console.log(res)
           if (res.data.meta.status === 200) {
-            this.$message.success(res.data.meta.msg)
+            if (this.cnt === 0) {
+              this.$message.success(res.data.meta.msg)
+              this.cnt++
+            }
             // 刷新
             row.children = res.data.data
+            // 判断当前权限是否还有下一级权限，如果没有下级权限，则当前的权限也应该删除
+            row.children.forEach((e1, i1) => { // 遍历一级权限
+              if (e1.children.length === 0) { // 说明这个一级权限下面没有任何的二级权限
+                this.delRights(row, e1.id)
+              } else {
+                e1.children.forEach((e2, i2) => { // 遍历二级权限
+                  if (e2.children.length === 0) { // 说明这个二级权限下面没有任何三级权限
+                    this.delRights(row, e2.id)
+                  }
+                })
+              }
+            })
           }
         })
         .catch(err => {

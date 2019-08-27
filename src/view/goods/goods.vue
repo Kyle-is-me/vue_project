@@ -1,5 +1,7 @@
 <template>
-    <div class="gdsList">商品列表</div>
+    <div class="goods">
+        <router-view></router-view>
+    </div>
 </template>
 
 <script>

@@ -7,3 +7,10 @@ export const getAllRights = (type) => {
     url: `rights/${type}`
   })
 }
+
+// 左侧菜单权限
+export const menuRights = () => {
+  return axios({
+    url: 'menus'
+  })
+}

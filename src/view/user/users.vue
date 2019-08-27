@@ -31,8 +31,8 @@
         <el-form-item label="用户名" prop="username">
           <el-input v-model="addUserForm.username"></el-input>
         </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="addUserForm.password"></el-input>
+        <el-form-item  label="密码" prop="password">
+          <el-input type="password" v-model="addUserForm.password"></el-input>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="addUserForm.email"></el-input>
@@ -379,11 +379,7 @@ export default {
                   type: 'success',
                   message: '删除成功!'
                 })
-                if (this.userObj.pagesize === 1) {
-                  if (this.userObj.pagenum > 1) {
-                    this.userObj.pagenum--
-                  }
-                }
+                this.userObj.pagenum = Math.ceil((this.total - 1) / this.userObj.pagesize) < this.userObj.pagenum ? --this.userObj.pagenum : this.userObj.pagenum
                 this.init()
               } else {
                 this.$message.error('删除失败')
@@ -409,8 +405,6 @@ export default {
         // console.log(res)
         if (res.data.meta.status === 200) {
           this.allRoles = res.data.data
-        } else {
-          this.$message.error(res.data.meta.msg)
         }
       })
       .catch(err => {

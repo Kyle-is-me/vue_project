@@ -4,27 +4,26 @@
       <el-aside width="200px">
         <img src="../assets/logo.png" class="logo" alt="">
         <el-menu
-          :router='true'
-          :default-active="'1-1'"
+          :router = "true"
           class="el-menu-vertical-demo"
           background-color="#545c64"
           text-color="#fff"
           active-text-color="#ffd04b"
-          :unique-opened ="true"
+          :unique-opened="true"
         >
-          <el-submenu index="1">
+          <el-submenu :index="first.id+''" v-for="first in menuList" :key="first.id">
             <template slot="title">
               <i class="el-icon-location"></i>
-              <span>用户管理</span>
+              <span>{{first.authName}}</span>
             </template>
-            <el-menu-item index="/home/users">
+            <el-menu-item :index="`/home/${second.path}`" v-for="second in first.children" :key="second.id">
               <template slot="title">
                 <i class="el-icon-menu"></i>
-                <span>用户列表</span>
+                <span>{{second.authName}}</span>
               </template>
             </el-menu-item>
           </el-submenu>
-          <el-submenu index="2">
+          <!-- <el-submenu index="2">
             <template slot="title">
               <i class="el-icon-location"></i>
               <span>权限管理</span>
@@ -41,13 +40,13 @@
                 <span>权限列表</span>
               </template>
             </el-menu-item>
-          </el-submenu>
-          <el-submenu index="3">
+          </el-submenu> -->
+          <!-- <el-submenu index="3">
             <template slot="title">
               <i class="el-icon-location"></i>
               <span>商品管理</span>
             </template>
-            <el-menu-item index="3-1">
+            <el-menu-item index="/home/goods/list">
               <template slot="title">
                 <i class="el-icon-menu"></i>
                 <span>商品列表</span>
@@ -89,7 +88,7 @@
                 <span>数据报表</span>
               </template>
             </el-menu-item>
-          </el-submenu>
+          </el-submenu> -->
         </el-menu>
       </el-aside>
       <el-container>
@@ -106,12 +105,27 @@
   </div>
 </template>
 <script>
+import { menuRights } from '@/api/rights_index.js'
 export default {
   data () {
-    return {}
+    return {
+      menuList: []
+    }
   },
-  methods: {
-
+  mounted () {
+    menuRights()
+      .then((res) => {
+        // console.log(res)
+        if (res.data.meta.status === 200) {
+          this.menuList = res.data.data
+          // console.log(this.menuList)
+        } else {
+          this.$message.error(res.data.meta.msg)
+        }
+      })
+      .catch((err) => {
+        console.log(err)
+      })
   }
 }
 </script>
